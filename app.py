@@ -311,6 +311,12 @@ with st.sidebar:
         format="%d%%",
         key="start_pct",
     )
+    
+    show_future_truth = st.toggle(
+        "显示未来真值（演示评估）",
+        value=True,
+        key="show_future_truth",
+    )
 
     # Controls
     col1, col2, col3 = (
@@ -634,6 +640,7 @@ series = {
 component_data = {
     "segment_start":segment_start,
     "segment_end":segment_end,
+    
     "initial_cursor":initial_cursor,
     "timestamps":timestamps,
     "series":series,
@@ -645,6 +652,8 @@ component_data = {
     "interval_ms":INTERVAL_MS,
     "playback_speed":playback_speed,
     "inference_every":inference_every,
+    "show_future_truth":show_future_truth,
+    
     "running":st.session_state.running,
     "reset_token":st.session_state.reset_token,
     "forecast":st.session_state.forecast_packet,

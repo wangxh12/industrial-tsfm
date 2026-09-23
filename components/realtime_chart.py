@@ -99,6 +99,11 @@ HTML = """
                 <span class="legend-block band"></span>
                 P10–P90 预测区间
             </div>
+            
+            <div class="legend-item">
+                <span class="legend-line truth"></span>
+                未来真值
+            </div>
 
             <div class="legend-item">
                 <span class="legend-line now"></span>
@@ -355,6 +360,11 @@ CSS = """
 
 .legend-line.median {
     border-color: #ef4444;
+}
+
+.legend-line.truth {
+    border-color: #16a34a;
+    border-top-style: dashed;
 }
 
 .legend-line.now {
@@ -1443,6 +1453,42 @@ export default function({
                 );
             }
         }
+        
+        if (
+            state.showFutureTruth
+        ) {
+
+            const truthEnd =
+                Math.min(
+                    state.currentCursor
+                    + state.horizon,
+                    state.segmentEnd
+                );
+
+
+            for (
+                let index = state.currentCursor;
+                index < truthEnd;
+                index++
+            ) {
+
+                const value =
+                    valueAt(
+                        state,
+                        state.targetName,
+                        index
+                    );
+
+                if (
+                    value !== null
+                ) {
+
+                    valuesForScale.push(
+                        value
+                    );
+                }
+            }
+        }
 
 
         if (
@@ -1850,6 +1896,136 @@ export default function({
                 ctx.stroke();
             }
         }
+        
+        // ====================================================
+        // Future Ground Truth
+        //
+        // Only used for replay / evaluation.
+        // In a real online system, future truth is unavailable.
+        // ====================================================
+
+        if (
+            state.showFutureTruth
+        ) {
+
+            const truthStart =
+                state.currentCursor;
+
+            const truthEnd =
+                Math.min(
+                    state.currentCursor
+                    + state.horizon,
+                    state.segmentEnd
+                );
+
+
+            ctx.save();
+
+            ctx.beginPath();
+
+            ctx.strokeStyle =
+                "#16a34a";
+
+            ctx.lineWidth =
+                1.8;
+
+            ctx.setLineDash([
+                7,
+                5,
+            ]);
+
+
+            let truthStarted =
+                false;
+
+
+            for (
+                let index = truthStart;
+                index < truthEnd;
+                index++
+            ) {
+
+                const value =
+                    valueAt(
+                        state,
+                        state.targetName,
+                        index
+                    );
+
+
+                if (
+                    value === null
+                ) {
+                    continue;
+                }
+
+
+                const time =
+                    timestampAt(
+                        state,
+                        index
+                    );
+
+
+                // Future truth should only be drawn
+                // to the right of the current-time line.
+                if (
+                    time < currentTime
+                ) {
+                    continue;
+                }
+
+
+                if (
+                    time > rightTime
+                ) {
+                    break;
+                }
+
+
+                const x =
+                    xOf(
+                        time
+                    );
+
+                const y =
+                    yOf(
+                        value
+                    );
+
+
+                if (
+                    !truthStarted
+                ) {
+
+                    ctx.moveTo(
+                        x,
+                        y
+                    );
+
+                    truthStarted =
+                        true;
+
+                } else {
+
+                    ctx.lineTo(
+                        x,
+                        y
+                    );
+                }
+            }
+
+
+            if (
+                truthStarted
+            ) {
+
+                ctx.stroke();
+            }
+
+
+            ctx.restore();
+        }
 
 
         // ====================================================
@@ -2202,6 +2378,11 @@ export default function({
 
             modelName:
                 incoming.model_name,
+                
+            showFutureTruth:
+                Boolean(
+                    incoming.show_future_truth
+                ),
 
             currentCursor:
                 Number(
@@ -2404,6 +2585,11 @@ export default function({
     state.playbackSpeed =
         Number(
             data.playback_speed
+        );
+        
+    state.showFutureTruth =
+        Boolean(
+            data.show_future_truth
         );
 
     state.inferenceEvery =
