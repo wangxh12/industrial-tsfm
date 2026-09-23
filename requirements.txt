@@ -1,0 +1,6 @@
+torch>=2.5
+toto-models
+pandas
+numpy
+matplotlib
+huggingface_hub
